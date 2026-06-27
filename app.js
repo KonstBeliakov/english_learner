@@ -1,61 +1,147 @@
+/**
+ * English Mix — main application
+ * Screens: LevelSelect -> TextSelect -> Reading
+ */
 (function () {
     'use strict';
 
-    // --- DOM refs ---
-    const textContentEl = document.getElementById('textContent');
-    const textSelectEl = document.getElementById('textSelect');
-    const showTranslationBtn = document.getElementById('showTranslationBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const tooltipEl = document.getElementById('tooltip');
-    const tooltipTranslation = document.getElementById('tooltipTranslation');
-    const tooltipOriginal = document.getElementById('tooltipOriginal');
+    // ===================== STATE =====================
+    const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    const STORAGE_KEY = 'english_mix_level';
 
-    // --- State ---
-    let currentTextId = null;
+    let currentLevel = null;
+    let currentBook = null;
     let allWordElements = [];
 
-    // --- Init ---
-    function init() {
-        populateSelect();
-        bindEvents();
-        loadText(TEXTS[0].id);
+    // ===================== DOM refs =====================
+    const $ = function (id) { return document.getElementById(id); };
+
+    const levelScreen = $('levelScreen');
+    const textScreen = $('textScreen');
+    const readingScreen = $('readingScreen');
+
+    const levelCards = document.querySelectorAll('.level-card');
+    const levelConfirmBtn = $('levelConfirmBtn');
+    const levelLabel = $('levelLabel');
+    const bookList = $('bookList');
+    const backToLevelBtn = $('backToLevelBtn');
+
+    const readingSubtitle = $('readingSubtitle');
+    const textContentEl = $('textContent');
+    const showTranslationBtn = $('showTranslationBtn');
+    const resetBtn = $('resetBtn');
+    const backToBooksBtn = $('backToBooksBtn');
+    const tooltipEl = $('tooltip');
+    const tooltipTranslation = $('tooltipTranslation');
+    const tooltipOriginal = $('tooltipOriginal');
+
+    // ===================== Screen switching =====================
+    function showScreen(screenId) {
+        levelScreen.classList.add('hidden');
+        textScreen.classList.add('hidden');
+        readingScreen.classList.add('hidden');
+        document.getElementById(screenId).classList.remove('hidden');
     }
 
-    // --- Populate select ---
-    function populateSelect() {
-        TEXTS.forEach(function (t) {
-            var opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = t.title;
-            textSelectEl.appendChild(opt);
+    // ===================== LEVEL SELECTION =====================
+    function initLevelScreen() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        levelCards.forEach(function (card) {
+            card.classList.remove('selected');
+            var lvl = card.getAttribute('data-level');
+            if (saved && lvl === saved) {
+                card.classList.add('selected');
+                levelConfirmBtn.disabled = false;
+                currentLevel = saved;
+            }
+        });
+
+        levelCards.forEach(function (card) {
+            card.addEventListener('click', function () {
+                levelCards.forEach(function (c) { c.classList.remove('selected'); });
+                this.classList.add('selected');
+                currentLevel = this.getAttribute('data-level');
+                levelConfirmBtn.disabled = false;
+            });
+        });
+
+        levelConfirmBtn.addEventListener('click', function () {
+            if (currentLevel) {
+                localStorage.setItem(STORAGE_KEY, currentLevel);
+                initTextScreen(currentLevel);
+            }
         });
     }
 
-    // --- Bind events ---
-    function bindEvents() {
-        textSelectEl.addEventListener('change', function () {
-            loadText(this.value);
-        });
-
-        showTranslationBtn.addEventListener('click', showAllTranslations);
-        resetBtn.addEventListener('click', function () {
-            loadText(currentTextId);
-        });
-
-        document.addEventListener('mousemove', function (e) {
-            tooltipEl.style.left = e.clientX + 12 + 'px';
-            tooltipEl.style.top = e.clientY + 12 + 'px';
+    // ===================== TEXT SELECTION =====================
+    function initTextScreen(level) {
+        levelLabel.textContent = level;
+        showScreen('textScreen');
+        loadBooks(function (books) {
+            renderBookList(books);
         });
     }
 
-    // --- Load text ---
-    function loadText(id) {
-        currentTextId = id;
-        var textData = TEXTS.find(function (t) { return t.id === id; });
-        if (!textData) return;
+    function loadBooks(callback) {
+        var books = [];
+        if (typeof BOOKS_DATA !== 'undefined') {
+            BOOKS_DATA.forEach(function (data, i) {
+                books.push({
+                    id: data.id || 'book_' + i,
+                    title: data.title || data.book || 'Unknown',
+                    author: data.author || '',
+                    dataIndex: i
+                });
+            });
+        }
+        callback(books);
+    }
 
+    function renderBookList(books) {
+        bookList.innerHTML = '';
+        if (books.length === 0) {
+            bookList.innerHTML = '<p class="empty-msg">Пока нет книг для этого уровня.</p>';
+            return;
+        }
+        books.forEach(function (book) {
+            var card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML =
+                '<div class="book-title">' + escapeHtml(book.title) + '</div>' +
+                '<div class="book-author">' + escapeHtml(book.author) + '</div>';
+            card.addEventListener('click', function () {
+                loadBook(book);
+            });
+            bookList.appendChild(card);
+        });
+    }
+
+    function loadBook(book) {
+        currentBook = book;
+        readingSubtitle.textContent = book.title + ' (' + currentLevel + ')';
+
+        var data = null;
+        if (typeof BOOKS_DATA !== 'undefined' && book.dataIndex !== undefined) {
+            data = BOOKS_DATA[book.dataIndex];
+        }
+
+        if (data) {
+            showReadingScreen(data);
+        } else {
+            readingSubtitle.textContent = 'Ошибка: книга не найдена';
+        }
+    }
+
+    // ===================== READING SCREEN =====================
+    function showReadingScreen(textData) {
+        showScreen('readingScreen');
         textContentEl.innerHTML = '';
         allWordElements = [];
+
+        if (!textData.paragraphs || textData.paragraphs.length === 0) {
+            textContentEl.innerHTML = '<p class="empty-msg">Текст пуст.</p>';
+            return;
+        }
 
         textData.paragraphs.forEach(function (para) {
             var pEl = document.createElement('p');
@@ -63,72 +149,61 @@
             textContentEl.appendChild(pEl);
         });
 
-        // Collect all .eng-word elements
         allWordElements = Array.from(textContentEl.querySelectorAll('.eng-word'));
 
-        // Bind click/hover to each word
         allWordElements.forEach(function (el) {
             el.addEventListener('click', function (e) {
                 e.stopPropagation();
                 toggleWordTranslation(el);
             });
-
             el.addEventListener('mouseenter', function (e) {
                 showTooltip(el, e);
             });
-
             el.addEventListener('mouseleave', function () {
                 hideTooltip();
             });
         });
-
-        // Reset select
-        textSelectEl.value = id;
     }
 
-    // --- Build paragraph HTML ---
+    // ===================== PARAGRAPH BUILDER =====================
     function buildParagraphHTML(para) {
         var ru = para.ru;
-        var words = para.words;
+        var words = para.words || [];
+        if (words.length === 0) return ru;
 
-        // Sort words by length descending to match longer phrases first
         var sorted = words.slice().sort(function (a, b) {
             return b.en.length - a.en.length;
         });
 
         var result = ru;
-
         sorted.forEach(function (w) {
             var escaped = escapeRegExp(w.ru);
             var regex = new RegExp(escaped, 'gi');
             var replacement = '<span class="eng-word" data-en="' + escapeAttr(w.en) + '" data-ru="' + escapeAttr(w.ru) + '">' + w.en + '</span>';
             result = result.replace(regex, replacement);
         });
-
         return result;
     }
 
-    // --- Toggle single word ---
     function toggleWordTranslation(el) {
         el.classList.toggle('translated');
     }
 
-    // --- Show all translations ---
     function showAllTranslations() {
         allWordElements.forEach(function (el) {
             el.classList.add('translated');
         });
     }
 
-    // --- Tooltip ---
+    // ===================== TOOLTIP =====================
     function showTooltip(el, e) {
         var en = el.getAttribute('data-en');
         var ru = el.getAttribute('data-ru');
         tooltipTranslation.textContent = en + ' \u2014 ' + ru;
-        tooltipOriginal.textContent = '\u041D\u0430\u0436\u043C\u0438, \u0447\u0442\u043E\u0431\u044B ' + (el.classList.contains('translated') ? '\u0441\u043A\u0440\u044B\u0442\u044C' : '\u043F\u043E\u043A\u0430\u0437\u0430\u0442\u044C') + ' \u043F\u0435\u0440\u0435\u0432\u043E\u0434';
+        tooltipOriginal.textContent = '\u041D\u0430\u0436\u043C\u0438, \u0447\u0442\u043E\u0431\u044B ' +
+            (el.classList.contains('translated') ? '\u0441\u043A\u0440\u044B\u0442\u044C' : '\u043F\u043E\u043A\u0430\u0437\u0430\u0442\u044C') +
+            ' \u043F\u0435\u0440\u0435\u0432\u043E\u0434';
         tooltipEl.classList.remove('hidden');
-
-        // Position
         tooltipEl.style.left = e.clientX + 12 + 'px';
         tooltipEl.style.top = e.clientY + 12 + 'px';
     }
@@ -137,15 +212,57 @@
         tooltipEl.classList.add('hidden');
     }
 
-    // --- Helpers ---
+    // ===================== HELPERS =====================
     function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     function escapeAttr(str) {
-        return str.replace(/"/g, '"').replace(/'/g, '&#39;').replace(/</g, '<').replace(/>/g, '>');
+        return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // --- Start ---
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    // ===================== EVENT BINDINGS =====================
+    function bindEvents() {
+        showTranslationBtn.addEventListener('click', showAllTranslations);
+        resetBtn.addEventListener('click', function () {
+            if (currentBook) {
+                loadBook(currentBook);
+            }
+        });
+        backToLevelBtn.addEventListener('click', function () {
+            initLevelScreen();
+            showScreen('levelScreen');
+        });
+        backToBooksBtn.addEventListener('click', function () {
+            if (currentLevel) {
+                initTextScreen(currentLevel);
+            }
+        });
+        document.addEventListener('mousemove', function (e) {
+            tooltipEl.style.left = e.clientX + 12 + 'px';
+            tooltipEl.style.top = e.clientY + 12 + 'px';
+        });
+    }
+
+    // ===================== INIT =====================
+    function init() {
+        bindEvents();
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved && LEVELS.indexOf(saved) !== -1) {
+            currentLevel = saved;
+            initTextScreen(saved);
+        } else {
+            showScreen('levelScreen');
+            initLevelScreen();
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', init);
 })();
+

@@ -213,3 +213,144 @@ header h1 {
         font-size: 0.85rem;
     }
 }
+
+/* === Screen management === */
+.screen {
+    display: block;
+}
+.screen.hidden {
+    display: none;
+}
+
+/* === Level Selection === */
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto 24px;
+}
+
+.level-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 3px solid transparent;
+    user-select: none;
+}
+
+.level-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.level-card.selected {
+    border-color: #2ecc71;
+    background: white;
+    box-shadow: 0 4px 16px rgba(46, 204, 113, 0.3);
+}
+
+.level-badge {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 4px;
+}
+
+.level-card.selected .level-badge {
+    color: #27ae60;
+}
+
+.level-desc {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.level-hint {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.btn-primary {
+    display: block;
+    margin: 0 auto;
+    padding: 14px 40px;
+    background: #2ecc71;
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #27ae60;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(46, 204, 113, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === Book List === */
+.book-list {
+    max-width: 600px;
+    margin: 0 auto 20px;
+}
+
+.book-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 18px 24px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+}
+
+.book-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.book-author {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.text-nav {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.empty-msg {
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    font-size: 1rem;
+    padding: 40px 0;
+}
+
+/* === Responsive for level grid === */
+@media (max-width: 500px) {
+    .level-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+

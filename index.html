@@ -8,32 +8,83 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📖 English Mix</h1>
-            <p class="subtitle">Читай текст на русском с английскими вставками</p>
-        </header>
 
-        <div class="controls">
-            <button id="showTranslationBtn" class="btn btn-secondary">Показать перевод всех слов</button>
-            <button id="resetBtn" class="btn btn-secondary">Сбросить</button>
+        <!-- SCREEN 1: Level Selection -->
+        <div id="levelScreen" class="screen">
+            <header>
+                <h1>📖 English Mix</h1>
+                <p class="subtitle">Выбери свой уровень языка</p>
+            </header>
+            <div class="level-grid">
+                <div class="level-card" data-level="A1">
+                    <div class="level-badge">A1</div>
+                    <div class="level-desc">Начинающий</div>
+                    <div class="level-hint">самые простые слова</div>
+                </div>
+                <div class="level-card" data-level="A2">
+                    <div class="level-badge">A2</div>
+                    <div class="level-desc">Элементарный</div>
+                    <div class="level-hint">базовый словарный запас</div>
+                </div>
+                <div class="level-card" data-level="B1">
+                    <div class="level-badge">B1</div>
+                    <div class="level-desc">Средний</div>
+                    <div class="level-hint">уверенное понимание</div>
+                </div>
+                <div class="level-card" data-level="B2">
+                    <div class="level-badge">B2</div>
+                    <div class="level-desc">Выше среднего</div>
+                    <div class="level-hint">сложные конструкции</div>
+                </div>
+                <div class="level-card" data-level="C1">
+                    <div class="level-badge">C1</div>
+                    <div class="level-desc">Продвинутый</div>
+                    <div class="level-hint">редкие слова и идиомы</div>
+                </div>
+                <div class="level-card" data-level="C2">
+                    <div class="level-badge">C2</div>
+                    <div class="level-desc">В совершенстве</div>
+                    <div class="level-hint">максимальная сложность</div>
+                </div>
+            </div>
+            <button id="levelConfirmBtn" class="btn btn-primary" disabled>Выбрать уровень</button>
         </div>
 
-        <div class="text-card">
-            <div id="textContent" class="text-content"></div>
+        <!-- SCREEN 2: Text Selection -->
+        <div id="textScreen" class="screen hidden">
+            <header>
+                <h1>📖 English Mix</h1>
+                <p class="subtitle">Уровень: <span id="levelLabel">—</span></p>
+            </header>
+            <div id="bookList" class="book-list"></div>
+            <div class="text-nav">
+                <button id="backToLevelBtn" class="btn btn-secondary">← Сменить уровень</button>
+            </div>
         </div>
 
-        <div id="tooltip" class="tooltip hidden">
-            <div id="tooltipTranslation" class="tooltip-translation"></div>
-            <div id="tooltipOriginal" class="tooltip-original"></div>
+        <!-- SCREEN 3: Reading -->
+        <div id="readingScreen" class="screen hidden">
+            <header>
+                <h1>📖 English Mix</h1>
+                <p class="subtitle" id="readingSubtitle">—</p>
+            </header>
+            <div class="controls">
+                <button id="showTranslationBtn" class="btn btn-secondary">Показать перевод всех слов</button>
+                <button id="resetBtn" class="btn btn-secondary">Сбросить</button>
+                <button id="backToBooksBtn" class="btn btn-secondary">← К списку книг</button>
+            </div>
+            <div class="text-card">
+                <div id="textContent" class="text-content"></div>
+            </div>
+            <div id="tooltip" class="tooltip hidden">
+                <div id="tooltipTranslation" class="tooltip-translation"></div>
+                <div id="tooltipOriginal" class="tooltip-original"></div>
+            </div>
         </div>
 
-        <div class="text-selector">
-            <label for="textSelect">Выбери текст:</label>
-            <select id="textSelect"></select>
-        </div>
     </div>
 
-    <script src="texts.js"></script>
+    <script src="data/books/books_data.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
