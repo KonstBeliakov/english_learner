@@ -5,6 +5,56 @@
 (function () {
     'use strict';
 
+    // ===================== SOUND MANAGER =====================
+    const SoundManager = {
+        _ctx: null,
+        _init() {
+            if (!this._ctx) {
+                this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        },
+        _play(freq, duration, type = 'sine', volume = 0.3) {
+            try {
+                this._init();
+                const osc = this._ctx.createOscillator();
+                const gain = this._ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this._ctx.currentTime);
+                gain.gain.setValueAtTime(volume, this._ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this._ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this._ctx.destination);
+                osc.start();
+                osc.stop(this._ctx.currentTime + duration);
+            } catch (e) {
+                // Audio not available
+            }
+        },
+        correct() {
+            this._play(523.25, 0.15, 'sine', 0.3);
+            setTimeout(() => this._play(659.25, 0.15, 'sine', 0.3), 100);
+            setTimeout(() => this._play(783.99, 0.25, 'sine', 0.3), 200);
+        },
+        wrong() {
+            this._play(200, 0.3, 'sawtooth', 0.2);
+            setTimeout(() => this._play(150, 0.4, 'sawtooth', 0.2), 150);
+        },
+        select() {
+            this._play(440, 0.08, 'sine', 0.15);
+        },
+        levelComplete() {
+            const notes = [523.25, 587.33, 659.25, 783.99, 1046.5];
+            notes.forEach((freq, i) => {
+                setTimeout(() => this._play(freq, 0.2, 'sine', 0.25), i * 120);
+            });
+        },
+        levelFailed() {
+            this._play(300, 0.3, 'square', 0.15);
+            setTimeout(() => this._play(250, 0.3, 'square', 0.15), 200);
+            setTimeout(() => this._play(200, 0.5, 'square', 0.15), 400);
+        }
+    };
+
     // ===================== STATE =====================
     const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
     const STORAGE_KEY = 'english_mix_level';
@@ -308,9 +358,11 @@
 
         var isCorrect = (selected === correctRu);
         if (isCorrect) {
+            SoundManager.correct();
             quizCorrect++;
             clickedBtn.classList.add('correct');
         } else {
+            SoundManager.wrong();
             clickedBtn.classList.add('incorrect');
             // Highlight the correct answer
             allBtns.forEach(function (b) {
