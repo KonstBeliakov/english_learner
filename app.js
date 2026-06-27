@@ -64,6 +64,8 @@
     let allWordElements = [];
     let quizWords = [];
     let currentTextData = null;
+    let currentBookData = null;
+    let currentChapter = 0;
 
     // ===================== DOM refs =====================
     const $ = function (id) { return document.getElementById(id); };
@@ -100,12 +102,17 @@
     const ratingCorrect = $('ratingCorrect');
     const ratingPct = $('ratingPct');
     const resultBackBtn = $('resultBackBtn');
+    const chapterScreen = $('chapterScreen');
+    const chapterSubtitle = $('chapterSubtitle');
+    const chapterList = $('chapterList');
+    const backToBookListBtn = $('backToBookListBtn');
 
     // ===================== Screen switching =====================
     function showScreen(screenId) {
         levelScreen.classList.add('hidden');
         textScreen.classList.add('hidden');
         readingScreen.classList.add('hidden');
+        chapterScreen.classList.add('hidden');
         quizScreen.classList.add('hidden');
         resultScreen.classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
@@ -172,11 +179,27 @@
             return;
         }
         books.forEach(function (book) {
+            var data = null;
+            if (typeof BOOKS_DATA !== 'undefined' && book.dataIndex !== undefined) {
+                data = BOOKS_DATA[book.dataIndex];
+            }
+            var chCount = data ? data.chapters.length : 0;
+
+            var progress = getProgress(book.id);
+            var lastCh = progress.lastChapter || 0;
+
             var card = document.createElement('div');
             card.className = 'book-card';
-            card.innerHTML =
-                '<div class="book-title">' + escapeHtml(book.title) + '</div>' +
+            var info = '<div class="book-title">' + escapeHtml(book.title) + '</div>' +
                 '<div class="book-author">' + escapeHtml(book.author) + '</div>';
+            if (chCount > 1) {
+                info += '<div class="book-chapters">' + chCount + ' глав</div>';
+            }
+            if (lastCh > 0) {
+                info += '<div class="book-progress">Прочитано глав: ' + lastCh + '/' + chCount + '</div>';
+                info += '<div class="book-continue">Продолжить (глава ' + (lastCh + 1) + ') →</div>';
+            }
+            card.innerHTML = info;
             card.addEventListener('click', function () {
                 loadBook(book);
             });
@@ -186,24 +209,67 @@
 
     function loadBook(book) {
         currentBook = book;
-        readingSubtitle.textContent = book.title + ' (' + currentLevel + ')';
 
         var data = null;
         if (typeof BOOKS_DATA !== 'undefined' && book.dataIndex !== undefined) {
             data = BOOKS_DATA[book.dataIndex];
         }
 
-        if (data) {
-            showReadingScreen(data);
-        } else {
+        if (!data) {
             readingSubtitle.textContent = 'Ошибка: книга не найдена';
+            return;
         }
+
+        currentBookData = data;
+
+        if (data.chapters.length > 1) {
+            showChapterSelection(book, data);
+        } else {
+            // Single chapter: go directly to reading
+            currentChapter = 0;
+            showChapter(book, data, 0);
+        }
+    }
+
+    function showChapterSelection(book, data) {
+        chapterSubtitle.textContent = book.title + ' (' + currentLevel + ')';
+        chapterList.innerHTML = '';
+
+        var progress = getProgress(book.id);
+
+        data.chapters.forEach(function (ch, idx) {
+            var isCompleted = progress.completed && progress.completed['ch_' + idx];
+            var card = document.createElement('div');
+            card.className = 'book-card';
+            var status = isCompleted ? ' ✅' : '';
+            card.innerHTML = '<div class="book-title">' + escapeHtml(ch.title) + status + '</div>';
+            card.addEventListener('click', function () {
+                currentChapter = idx;
+                showChapter(book, data, idx);
+            });
+            chapterList.appendChild(card);
+        });
+
+        showScreen('chapterScreen');
+        window.scrollTo(0, 0);
+    }
+
+    function showChapter(book, data, chapterIndex) {
+        currentChapter = chapterIndex;
+        readingSubtitle.textContent = data.chapters[chapterIndex].title + ' (' + currentLevel + ')';
+
+        // Build a chapter-only object for showReadingScreen
+        var chapterData = {
+            paragraphs: data.chapters[chapterIndex].paragraphs
+        };
+        showReadingScreen(chapterData);
     }
 
     // ===================== READING SCREEN =====================
     function showReadingScreen(textData) {
         currentTextData = textData;
         showScreen('readingScreen');
+        window.scrollTo(0, 0);
         textContentEl.innerHTML = '';
         allWordElements = [];
 
@@ -247,7 +313,8 @@
         var result = ru;
         sorted.forEach(function (w) {
             var escaped = escapeRegExp(w.ru);
-            var regex = new RegExp(escaped, 'gi');
+            var letters = "\u0430-\u044f\u0451\u0410-\u042f\u0401a-zA-Z";
+            var regex = new RegExp("(?<![" + letters + "])" + escaped + "(?![" + letters + "])", "gi");
             var replacement = '<span class="eng-word" data-en="' + escapeAttr(w.en) + '" data-ru="' + escapeAttr(w.ru) + '">' + w.en + '</span>';
             result = result.replace(regex, replacement);
         });
@@ -288,6 +355,21 @@
 
     function escapeAttr(str) {
         return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function getProgress(bookId) {
+        var key = 'progress_' + bookId;
+        try {
+            return JSON.parse(localStorage.getItem(key)) || { lastChapter: 0, completed: {} };
+        } catch(e) { return { lastChapter: 0, completed: {} }; }
+    }
+
+    function saveProgress(bookId, chapterIndex) {
+        var key = 'progress_' + bookId;
+        var data = getProgress(bookId);
+        data.lastChapter = Math.max(data.lastChapter, chapterIndex + 1);
+        data.completed['ch_' + chapterIndex] = true;
+        localStorage.setItem(key, JSON.stringify(data));
     }
 
     function escapeHtml(str) {
@@ -383,6 +465,11 @@
         var total = quizWords.length;
         var correct = quizCorrect;
 
+        // Save reading progress
+        if (currentBook && currentBookData) {
+            saveProgress(currentBook.id, currentChapter);
+        }
+
         saveRating(total, correct);
 
         resultSubtitle.textContent = total + ' с\u043B\u043E\u0432, ' + currentLevel;
@@ -414,7 +501,7 @@
     }
 
     function generateOptions(qw) {
-        var allRu = [];
+        var allRu = ['вариант 1', 'вариант 2', 'вариант 3'];  // fallbacks
         if (currentTextData && currentTextData.paragraphs) {
             currentTextData.paragraphs.forEach(function (p) {
                 if (p.words) {
@@ -486,8 +573,8 @@
     function bindEvents() {
         showTranslationBtn.addEventListener('click', showAllTranslations);
         resetBtn.addEventListener('click', function () {
-            if (currentBook) {
-                loadBook(currentBook);
+            if (currentBookData && currentBook) {
+                showChapter(currentBook, currentBookData, currentChapter);
             }
         });
         backToLevelBtn.addEventListener('click', function () {
@@ -499,15 +586,28 @@
                 initTextScreen(currentLevel);
             }
         });
-        finishBtn.addEventListener('click', startQuiz);
-        quizBackBtn.addEventListener('click', function () {
+        backToBookListBtn.addEventListener('click', function () {
             if (currentLevel) {
                 initTextScreen(currentLevel);
             }
         });
+        finishBtn.addEventListener('click', startQuiz);
+        quizBackBtn.addEventListener('click', function () {
+            if (currentLevel && currentBookData) {
+                if (currentBookData.chapters.length > 1) {
+                    showChapterSelection(currentBook, currentBookData);
+                } else {
+                    initTextScreen(currentLevel);
+                }
+            }
+        });
         resultBackBtn.addEventListener('click', function () {
-            if (currentLevel) {
-                initTextScreen(currentLevel);
+            if (currentLevel && currentBookData) {
+                if (currentBookData.chapters.length > 1) {
+                    showChapterSelection(currentBook, currentBookData);
+                } else {
+                    initTextScreen(currentLevel);
+                }
             }
         });
         document.addEventListener('mousemove', function (e) {

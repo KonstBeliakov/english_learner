@@ -347,6 +347,26 @@ header h1 {
     padding: 40px 0;
 }
 
+/* === Book progress styles === */
+.book-chapters {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+.book-progress {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.book-continue {
+    font-size: 0.85rem;
+    color: #667eea;
+    font-weight: 600;
+    margin-top: 6px;
+}
+
 /* === Responsive for level grid === */
 @media (max-width: 500px) {
     .level-grid {
