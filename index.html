@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Mix — Учи английский через чтение</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 English Mix</h1>
+            <p class="subtitle">Читай текст на русском с английскими вставками</p>
+        </header>
+
+        <div class="controls">
+            <button id="showTranslationBtn" class="btn btn-secondary">Показать перевод всех слов</button>
+            <button id="resetBtn" class="btn btn-secondary">Сбросить</button>
+        </div>
+
+        <div class="text-card">
+            <div id="textContent" class="text-content"></div>
+        </div>
+
+        <div id="tooltip" class="tooltip hidden">
+            <div id="tooltipTranslation" class="tooltip-translation"></div>
+            <div id="tooltipOriginal" class="tooltip-original"></div>
+        </div>
+
+        <div class="text-selector">
+            <label for="textSelect">Выбери текст:</label>
+            <select id="textSelect"></select>
+        </div>
+    </div>
+
+    <script src="texts.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
