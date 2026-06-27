@@ -12,6 +12,8 @@
     let currentLevel = null;
     let currentBook = null;
     let allWordElements = [];
+    let quizWords = [];
+    let currentTextData = null;
 
     // ===================== DOM refs =====================
     const $ = function (id) { return document.getElementById(id); };
@@ -31,15 +33,31 @@
     const showTranslationBtn = $('showTranslationBtn');
     const resetBtn = $('resetBtn');
     const backToBooksBtn = $('backToBooksBtn');
+    const finishBtn = $('finishBtn');
     const tooltipEl = $('tooltip');
     const tooltipTranslation = $('tooltipTranslation');
     const tooltipOriginal = $('tooltipOriginal');
+    const quizScreen = $('quizScreen');
+    const quizContent = $('quizContent');
+    const quizSubtitle = $('quizSubtitle');
+    const quizBackBtn = $('quizBackBtn');
+    const resultScreen = $('resultScreen');
+    const resultSubtitle = $('resultSubtitle');
+    const resultScore = $('resultScore');
+    const resultPct = $('resultPct');
+    const ratingQuizzes = $('ratingQuizzes');
+    const ratingTotal = $('ratingTotal');
+    const ratingCorrect = $('ratingCorrect');
+    const ratingPct = $('ratingPct');
+    const resultBackBtn = $('resultBackBtn');
 
     // ===================== Screen switching =====================
     function showScreen(screenId) {
         levelScreen.classList.add('hidden');
         textScreen.classList.add('hidden');
         readingScreen.classList.add('hidden');
+        quizScreen.classList.add('hidden');
+        resultScreen.classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
     }
 
@@ -134,6 +152,7 @@
 
     // ===================== READING SCREEN =====================
     function showReadingScreen(textData) {
+        currentTextData = textData;
         showScreen('readingScreen');
         textContentEl.innerHTML = '';
         allWordElements = [];
@@ -228,6 +247,190 @@
     }
 
     // ===================== EVENT BINDINGS =====================
+
+    // ===================== QUIZ =====================
+    let quizIndex = 0;
+    let quizCorrect = 0;
+    let quizAnswered = false;
+
+    function startQuiz() {
+        if (!currentTextData) return;
+
+        quizWords = collectQuizWords(currentTextData);
+        if (quizWords.length === 0) {
+            alert('\u0412 \u044D\u0442\u043E\u043C \u0442\u0435\u043A\u0441\u0442\u0435 \u043D\u0435\u0442 \u0441\u043B\u043E\u0432 \u0434\u043B\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438.');
+            return;
+        }
+
+        quizIndex = 0;
+        quizCorrect = 0;
+        quizAnswered = false;
+        showScreen('quizScreen');
+        showQuizWord();
+    }
+
+    function showQuizWord() {
+        if (quizIndex >= quizWords.length) {
+            finishQuiz();
+            return;
+        }
+
+        var qw = quizWords[quizIndex];
+        quizAnswered = false;
+
+        var total = quizWords.length;
+        var num = quizIndex + 1;
+        document.getElementById('quizProgress').textContent = '' + num + ' / ' + total;
+        document.getElementById('quizWord').textContent = qw.en;
+
+        var options = generateOptions(qw);
+        var optDiv = document.getElementById('quizOptions');
+        optDiv.innerHTML = '';
+
+        options.forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.className = 'quiz-option-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', function () {
+                if (quizAnswered) return;
+                quizAnswered = true;
+                handleAnswer(btn, opt, qw.ru);
+            });
+            optDiv.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(clickedBtn, selected, correctRu) {
+        var allBtns = document.querySelectorAll('.quiz-option-btn');
+
+        // Disable all buttons
+        allBtns.forEach(function (b) { b.disabled = true; });
+
+        var isCorrect = (selected === correctRu);
+        if (isCorrect) {
+            quizCorrect++;
+            clickedBtn.classList.add('correct');
+        } else {
+            clickedBtn.classList.add('incorrect');
+            // Highlight the correct answer
+            allBtns.forEach(function (b) {
+                if (b.textContent === correctRu) {
+                    b.classList.add('correct');
+                }
+            });
+        }
+
+        // Auto-advance after a short delay
+        setTimeout(function () {
+            quizIndex++;
+            showQuizWord();
+        }, 800);
+    }
+
+    function finishQuiz() {
+        var total = quizWords.length;
+        var correct = quizCorrect;
+
+        saveRating(total, correct);
+
+        resultSubtitle.textContent = total + ' с\u043B\u043E\u0432, ' + currentLevel;
+        resultScore.textContent = correct + ' / ' + total;
+        var pct = total > 0 ? Math.round(correct / total * 100) : 0;
+        resultPct.textContent = pct + '%';
+
+        displayRating();
+        showScreen('resultScreen');
+    }
+
+    function collectQuizWords(textData) {
+        var seen = {};
+        var result = [];
+        if (textData.paragraphs) {
+            textData.paragraphs.forEach(function (p) {
+                if (p.words) {
+                    p.words.forEach(function (w) {
+                        var key = w.en + '|' + w.ru;
+                        if (!seen[key]) {
+                            seen[key] = true;
+                            result.push({ en: w.en, ru: w.ru });
+                        }
+                    });
+                }
+            });
+        }
+        return result;
+    }
+
+    function generateOptions(qw) {
+        var allRu = [];
+        if (currentTextData && currentTextData.paragraphs) {
+            currentTextData.paragraphs.forEach(function (p) {
+                if (p.words) {
+                    p.words.forEach(function (w) {
+                        if (w.ru !== qw.ru) allRu.push(w.ru);
+                    });
+                }
+            });
+        }
+
+        var uniqueRu = [];
+        var seen = {};
+        allRu.forEach(function (r) {
+            if (!seen[r]) { seen[r] = true; uniqueRu.push(r); }
+        });
+
+        shuffleArray(uniqueRu);
+        var distractors = uniqueRu.slice(0, 3);
+        while (distractors.length < 3) {
+            distractors.push('(\u0432\u0430\u0440\u0438\u0430\u043D\u0442 ' + (distractors.length + 1) + ')');
+        }
+
+        var options = [qw.ru].concat(distractors);
+        shuffleArray(options);
+        return options;
+    }
+
+    function shuffleArray(arr) {
+        for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = tmp;
+        }
+        return arr;
+    }    // ===================== RATING =====================
+    function saveRating(total, correct) {
+        var key = 'english_mix_rating';
+        var data = {};
+        try {
+            data = JSON.parse(localStorage.getItem(key)) || {};
+        } catch(e) { data = {}; }
+
+        data.quizzes = (data.quizzes || 0) + 1;
+        data.totalQuestions = (data.totalQuestions || 0) + total;
+        data.correctAnswers = (data.correctAnswers || 0) + correct;
+
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function displayRating() {
+        var key = 'english_mix_rating';
+        var data = {};
+        try {
+            data = JSON.parse(localStorage.getItem(key)) || {};
+        } catch(e) { data = {}; }
+
+        var quizzes = data.quizzes || 0;
+        var totalQ = data.totalQuestions || 0;
+        var correct = data.correctAnswers || 0;
+        var pct = totalQ > 0 ? Math.round(correct / totalQ * 100) : 0;
+
+        ratingQuizzes.textContent = quizzes;
+        ratingTotal.textContent = totalQ;
+        ratingCorrect.textContent = correct;
+        ratingPct.textContent = pct + '%';
+    }
+
     function bindEvents() {
         showTranslationBtn.addEventListener('click', showAllTranslations);
         resetBtn.addEventListener('click', function () {
@@ -240,6 +443,17 @@
             showScreen('levelScreen');
         });
         backToBooksBtn.addEventListener('click', function () {
+            if (currentLevel) {
+                initTextScreen(currentLevel);
+            }
+        });
+        finishBtn.addEventListener('click', startQuiz);
+        quizBackBtn.addEventListener('click', function () {
+            if (currentLevel) {
+                initTextScreen(currentLevel);
+            }
+        });
+        resultBackBtn.addEventListener('click', function () {
             if (currentLevel) {
                 initTextScreen(currentLevel);
             }

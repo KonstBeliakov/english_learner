@@ -76,9 +76,64 @@
             <div class="text-card">
                 <div id="textContent" class="text-content"></div>
             </div>
+            <div class="finish-bottom">
+                <button id="finishBtn" class="btn btn-primary">✔ Закончить главу</button>
+            </div>
             <div id="tooltip" class="tooltip hidden">
                 <div id="tooltipTranslation" class="tooltip-translation"></div>
                 <div id="tooltipOriginal" class="tooltip-original"></div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Quiz -->
+        <div id="quizScreen" class="screen hidden">
+            <header>
+                <h1>📝 Проверка знаний</h1>
+                <p class="subtitle" id="quizSubtitle">—</p>
+            </header>
+            <div class="quiz-card">
+                <div class="quiz-progress" id="quizProgress">—</div>
+                <div class="quiz-word" id="quizWord">—</div>
+                <div class="quiz-options" id="quizOptions"></div>
+            </div>
+            <div class="controls">
+                <button id="quizBackBtn" class="btn btn-secondary">← К списку книг</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: Quiz Results + Rating -->
+        <div id="resultScreen" class="screen hidden">
+            <header>
+                <h1>🏆 Результат</h1>
+                <p class="subtitle" id="resultSubtitle">—</p>
+            </header>
+            <div id="resultContent" class="result-content">
+                <div class="result-score" id="resultScore">0/0</div>
+                <div class="result-pct" id="resultPct">0%</div>
+            </div>
+            <div class="rating-section">
+                <h2>📊 Статистика</h2>
+                <div id="ratingContent" class="rating-content">
+                    <div class="rating-row">
+                        <span>Всего викторин:</span>
+                        <span id="ratingQuizzes">0</span>
+                    </div>
+                    <div class="rating-row">
+                        <span>Всего вопросов:</span>
+                        <span id="ratingTotal">0</span>
+                    </div>
+                    <div class="rating-row">
+                        <span>Правильных ответов:</span>
+                        <span id="ratingCorrect">0</span>
+                    </div>
+                    <div class="rating-row">
+                        <span>Общий процент:</span>
+                        <span id="ratingPct">0%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="resultBackBtn" class="btn btn-secondary">← К списку книг</button>
             </div>
         </div>
 
