@@ -143,6 +143,7 @@ def main():
     parser.add_argument("--chapter", "-c", type=int, default=1)
     parser.add_argument("--level", "-l", default="B1", choices=LEVEL_NAMES)
     parser.add_argument("--percent", "-p", type=float, default=8.0)
+    parser.add_argument("--save", default=None, help="Save word selection JSON to file")
 
     args = parser.parse_args()
 
@@ -211,6 +212,10 @@ def main():
         print()
         print("--- JSON output ---")
         print(json.dumps(output, ensure_ascii=False, indent=2))
+        if args.save:
+            with open(args.save, "w", encoding="utf-8") as f:
+                json.dump(output, f, ensure_ascii=False, indent=2)
+            print("Saved words to: " + args.save)
     else:
         print("  No words selected. Try a different level or lower the percent.")
 
