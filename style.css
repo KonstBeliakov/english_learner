@@ -347,6 +347,17 @@ header h1 {
     padding: 40px 0;
 }
 
+/* === Top navigation bar === */
+.text-nav-top {
+    text-align: center;
+    margin: 4px 0 12px;
+}
+
+.text-nav-top .btn {
+    font-size: 0.85rem;
+    padding: 6px 14px;
+}
+
 /* === Book progress styles === */
 .book-chapters {
     font-size: 0.8rem;

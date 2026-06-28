@@ -39,7 +39,6 @@
     const tooltipTranslation = $('tooltipTranslation');
     const tooltipOriginal = $('tooltipOriginal');
     const quizScreen = $('quizScreen');
-    const quizContent = $('quizContent');
     const quizSubtitle = $('quizSubtitle');
     const quizBackBtn = $('quizBackBtn');
     const resultScreen = $('resultScreen');
